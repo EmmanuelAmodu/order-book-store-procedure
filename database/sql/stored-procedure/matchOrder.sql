@@ -1,3 +1,5 @@
+USE `trading-desk`;
+
 DELIMITER //
 
 CREATE PROCEDURE matchOrders(
@@ -15,12 +17,7 @@ BEGIN
     DECLARE v_amount DECIMAL(18,8);
     DECLARE v_price DECIMAL(18,8);
     DECLARE done INT DEFAULT FALSE;
-
-    -- Initialize output variables
-    SET matched_amount = 0;
-    SET executed_value = 0;
-
-    -- Cursor to find matching orders based on FIFO
+    -- Cursor declaration must be here, right after the variable declarations and before any other logic
     DECLARE match_cursor CURSOR FOR
         SELECT id, user_id, amount, price FROM orders
         WHERE pair_id = p_pair_id
@@ -28,8 +25,11 @@ BEGIN
           AND (status = 'PARTIALLY_FILLED' OR status = 'PENDING')
           AND ((p_type = 'ASK' AND price <= p_price) OR (p_type = 'BID' AND price >= p_price))
         ORDER BY created_at ASC;
-
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- Initialize output variables
+    SET matched_amount = 0;
+    SET executed_value = 0;
 
     OPEN match_cursor;
 
@@ -39,7 +39,9 @@ BEGIN
             LEAVE match_loop;
         END IF;
 
+        -- Ensure this SELECT FOR UPDATE is part of an explicit transaction if needed
         SELECT amount INTO v_amount FROM orders WHERE id = v_order_id FOR UPDATE;
+        
         -- Calculate matched amount and executed value for each order
         IF v_amount <= p_amount THEN
             -- Full match
@@ -49,7 +51,8 @@ BEGIN
 
             -- Update the matched order as FILLED
             UPDATE orders SET status = 'FILLED', amount = 0 WHERE id = v_order_id;
-            INSERT INTO matches (order_id, match_id, amount, price, status) VALUES (v_order_id, p_order_id, v_amount, v_price, 'FILLED');
+            -- Assuming matches table exists and is intended for logging matches
+            INSERT INTO matches (order_id, match_id, amount, price, status) VALUES (p_order_id, v_order_id, v_amount, v_price, 'FILLED');
         ELSE
             -- Partial match
             SET matched_amount = matched_amount + p_amount;
@@ -57,7 +60,7 @@ BEGIN
 
             -- Update the matched order with the remaining amount
             UPDATE orders SET amount = amount - p_amount, status = 'PARTIALLY_FILLED' WHERE id = v_order_id;
-            INSERT INTO matches (order_id, match_id, amount, price, status) VALUES (v_order_id, p_order_id, p_amount, v_price, 'PARTIALLY_FILLED');
+            INSERT INTO matches (order_id, match_id, amount, price, status) VALUES (p_order_id, v_order_id, p_amount, v_price, 'PARTIALLY_FILLED');
             SET p_amount = 0;
         END IF;
 

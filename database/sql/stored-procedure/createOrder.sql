@@ -1,3 +1,5 @@
+USE `trading-desk`;
+
 DELIMITER //
 
 CREATE PROCEDURE createOrder(

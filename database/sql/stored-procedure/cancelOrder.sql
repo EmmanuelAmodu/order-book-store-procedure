@@ -1,3 +1,5 @@
+USE `trading-desk`;
+
 DELIMITER //
 
 CREATE PROCEDURE CancelOrderAndUpdateWallet(
@@ -45,10 +47,8 @@ BEGIN
         -- Mark the order as 'CANCELLED'
         UPDATE orders SET status = 'CANCELLED' WHERE id = p_order_id;
     ELSE
-        -- If the order is already 'FILLED' or 'CANCELLED', cannot cancel
-        ROLLBACK;
+        -- If the order is already 'FILLED' or 'CANCELLED', it cannot be canceled
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Order cannot be cancelled as it is already filled or previously cancelled.';
-        LEAVE PROCEDURE;
     END IF;
 
     -- Commit transaction
