@@ -1,12 +1,13 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import OrderService from './orders/service';
+import { producer } from './kafka';
 
 interface CustomRequest extends express.Request {
   userId?: string;
 }
 
-const orderService = new OrderService();
+const orderService = new OrderService(producer);
 const app = express();
 
 app.use(express.json());

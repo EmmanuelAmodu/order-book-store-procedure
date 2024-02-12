@@ -1,4 +1,9 @@
-USE `trading-desk`;
+CREATE DATABASE IF NOT EXISTS `spot-trading`
+    DEFAULT CHARACTER SET = 'utf8mb4'
+    COLLATE = 'utf8mb4_general_ci'
+    ENCRYPTION = 'N';
+
+USE `spot-trading`;
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -52,10 +57,12 @@ CREATE TABLE IF NOT EXISTS matches (
 CREATE TABLE IF NOT EXISTS transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     wallet_id INT NOT NULL,
+    order_id INT NOT NULL,
     amount DECIMAL(18,8) NOT NULL,
     type ENUM('RESERVE', 'TRADE') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (wallet_id) REFERENCES wallets(id)
+    FOREIGN KEY (wallet_id) REFERENCES wallets(id),
+    FOREIGN KEY (order_id) REFERENCES orders(id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS notifications (
@@ -64,3 +71,8 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;

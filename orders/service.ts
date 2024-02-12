@@ -1,8 +1,8 @@
+import { Producer } from "kafkajs";
 import { connection } from "../database/connection";
-import { producer } from "../kafka";
 
 export default class OrderService {
-  constructor() {
+  constructor(private readonly producer: Producer) {
     this.noticationLoop();
   }
 
@@ -61,7 +61,7 @@ export default class OrderService {
   }
   
   private async sendOrderNotification(orders: any[]) {
-    await producer.send({
+    await this.producer.send({
       topic: "order-notification",
       messages: orders.map((order) => ({ value: JSON.stringify(order) })),
     });
@@ -172,7 +172,7 @@ export default class OrderService {
       return Error("Insufficient balance");
     }
   
-    await producer.send({
+    await this.producer.send({
       topic: "create-order",
       messages: [
         {
@@ -194,7 +194,7 @@ export default class OrderService {
       return Error("Order cannot be cancelled");
     }
   
-    await producer.send({
+    await this.producer.send({
       topic: "cancel-order",
       messages: [
         {

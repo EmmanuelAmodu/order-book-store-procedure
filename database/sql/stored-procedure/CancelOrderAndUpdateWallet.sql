@@ -1,7 +1,8 @@
-USE `trading-desk`;
+USE `spot-trading`;
 
 DELIMITER //
 
+DROP PROCEDURE IF EXISTS CancelOrderAndUpdateWallet;
 CREATE PROCEDURE CancelOrderAndUpdateWallet(
     IN p_order_id INT
 )
@@ -33,12 +34,24 @@ BEGIN
         IF v_type = 'BID' THEN
             -- For BID orders, calculate refund in quote asset
             SET v_refund_amount = v_amount * v_price; -- Quote currency amount to refund
+            -- Create Transaction
+            INSERT INTO transactions (wallet_id, amount, type) VALUES (
+                (SELECT id FROM wallets WHERE user_id = v_user_id AND asset_name = v_quote_asset_name),
+                v_refund_amount, 'REFUND'
+            );
+            -- Update the quote wallet balance
             UPDATE wallets
             SET balance = balance + v_refund_amount
             WHERE user_id = v_user_id AND asset_name = v_quote_asset_name;
         ELSE
             -- For ASK orders, refund the remaining base asset amount
             SET v_refund_amount = v_amount; -- Base currency amount to refund
+            -- Create Transaction
+            INSERT INTO transactions (wallet_id, amount, type) VALUES (
+                (SELECT id FROM wallets WHERE user_id = v_user_id AND asset_name = v_base_asset_name),
+                v_refund_amount, 'REFUND'
+            );
+            -- Update the quote wallet balance
             UPDATE wallets
             SET balance = balance + v_refund_amount
             WHERE user_id = v_user_id AND asset_name = v_base_asset_name;
