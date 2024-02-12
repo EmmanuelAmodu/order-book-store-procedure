@@ -30,7 +30,7 @@ BEGIN
     DECLARE v_remaining_amount DECIMAL(18,8);
     DECLARE v_transaction_amount DECIMAL(18,8);
 
-    DECLARE v_error_message VARCHAR(510);
+    DECLARE v_error_message VARCHAR(255);
 
     -- Handler for SQL exceptions
     DECLARE EXIT HANDLER FOR SQLEXCEPTION

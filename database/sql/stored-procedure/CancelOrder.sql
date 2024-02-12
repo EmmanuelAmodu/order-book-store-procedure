@@ -17,6 +17,16 @@ BEGIN
     DECLARE v_quote_asset_name VARCHAR(10);
     DECLARE v_refund_amount DECIMAL(18,8);
 
+    DECLARE v_error_message VARCHAR(255);
+
+    -- Handler for SQL exceptions
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        GET DIAGNOSTICS CONDITION 1 v_error_message = MESSAGE_TEXT;
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_message;
+    END;
+
     -- Start transaction
     START TRANSACTION;
 
