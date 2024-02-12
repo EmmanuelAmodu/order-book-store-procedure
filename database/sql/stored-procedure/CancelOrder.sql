@@ -2,8 +2,8 @@ USE `spot-trading`;
 
 DELIMITER //
 
-DROP PROCEDURE IF EXISTS CancelOrderAndUpdateWallet;
-CREATE PROCEDURE CancelOrderAndUpdateWallet(
+DROP PROCEDURE IF EXISTS CancelOrder;
+CREATE PROCEDURE CancelOrder(
     IN p_order_id INT
 )
 BEGIN
