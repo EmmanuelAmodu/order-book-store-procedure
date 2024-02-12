@@ -34,10 +34,6 @@ BEGIN
         ORDER BY created_at ASC;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
-    -- Initialize output variables
-    SET matched_amount = 0;
-    SET executed_value = 0;
-
     OPEN match_cursor;
 
     match_loop: LOOP
@@ -47,28 +43,27 @@ BEGIN
         END IF;
 
         SELECT user_id, amount, price INTO v_user_id, v_amount, v_price FROM orders WHERE id = v_order_id FOR UPDATE;
-        
+
+        -- Initialize output variables
+        SET matched_amount = 0;
+        SET executed_value = 0;
+
         -- Calculate matched amount and executed value for each order
         IF v_amount <= p_amount THEN
             -- Full match
-            SET matched_amount = matched_amount + v_amount;
-            SET executed_value = executed_value + (v_amount * v_price);
+            SET matched_amount = v_amount;
+            SET executed_value = v_amount * v_price;
             SET p_amount = p_amount - v_amount;
         ELSE
             -- Partial match
-            SET matched_amount = matched_amount + p_amount;
-            SET executed_value = executed_value + (p_amount * v_price);
+            SET matched_amount = p_amount;
+            SET executed_value = p_amount * v_price;
             SET p_amount = 0;
         END IF;
 
         -- Update the matched order as FILLED or PARTIALLY_FILLED
-        SET v_amount = v_amount - matched_amount;
-        UPDATE orders SET status = IF(v_amount > 0, 'PARTIALLY_FILLED', 'FILLED'), amount = amount - matched_amount WHERE id = v_order_id;
-        INSERT INTO matches (order_id, match_id, amount, price, status) VALUES (p_order_id, v_order_id, matched_amount, v_price, IF(v_amount > 0, 'PARTIALLY_FILLED', 'FILLED'));
-
-        -- Wallet and transaction updates corrected
-        -- Note: This section assumes wallets are debited before order creation, so we adjust for the counterparty's wallet changes here.
-        -- For the order creator, adjustments are only needed if the order is partially filled, affecting the remaining balance.
+        UPDATE orders SET status = IF(v_amount <= p_amount, 'FILLED', 'PARTIALLY_FILLED'), amount = amount - matched_amount WHERE id = v_order_id;
+        INSERT INTO matches (order_id, match_id, amount, price, status) VALUES (p_order_id, v_order_id, matched_amount, v_price, IF(v_amount <= p_amount, 'FILLED', 'PARTIALLY_FILLED'));
 
         IF p_type = 'ASK' THEN
             -- For BID orders, the creator buys the base asset, Credit the creator's base asset wallet
@@ -110,7 +105,7 @@ BEGIN
             -- Log Transaction for Buyer (Receiving Base Asset)
             UPDATE wallets SET balance = balance + executed_value WHERE id = v_wallet_id;
             INSERT INTO transactions (wallet_id, order_id, amount, type)
-            VALUES (v_wallet_id, v_order_id, matched_amount, 'TRADE');
+            VALUES (v_wallet_id, v_order_id, executed_value, 'TRADE');
 
             -- Log transaction for seller (Receiving Quote Asset)
             UPDATE wallets SET balance = balance + matched_amount WHERE id = p_wallet_id;

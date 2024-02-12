@@ -48,8 +48,6 @@ CALL CreateOrder(7, 1, 'ASK', 40000, 0.5);
 CALL CreateOrder(8, 1, 'ASK', 40000, 0.5);
 CALL CreateOrder(9, 1, 'ASK', 40000, 0.5);
 CALL CreateOrder(10, 1, 'ASK', 40000, 0.5);
-CALL CreateOrder(1, 1, 'ASK', 40000, 0.5);
-CALL CreateOrder(1, 1, 'ASK', 40000, 0.5);
 CALL CreateOrder(2, 1, 'BID', 40000, 10);
 
 -- CALL CreateOrder(1, 2, 'ASK', 3000, 10);
