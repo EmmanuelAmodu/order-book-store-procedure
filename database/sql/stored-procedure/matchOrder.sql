@@ -25,7 +25,7 @@ BEGIN
     
     -- Cursor declaration
     DECLARE match_cursor CURSOR FOR
-        SELECT id, user_id, amount, price FROM orders
+        SELECT id FROM orders
         WHERE pair_id = p_pair_id
           AND id <> p_order_id
           AND type != p_type
@@ -41,12 +41,12 @@ BEGIN
     OPEN match_cursor;
 
     match_loop: LOOP
-        FETCH match_cursor INTO v_order_id, v_user_id, v_amount, v_price;
+        FETCH match_cursor INTO v_order_id;
         IF done THEN
             LEAVE match_loop;
         END IF;
 
-        SELECT amount INTO v_amount FROM orders WHERE id = v_order_id FOR UPDATE;
+        SELECT user_id, amount, price INTO v_user_id, v_amount, v_price FROM orders WHERE id = v_order_id FOR UPDATE;
         
         -- Calculate matched amount and executed value for each order
         IF v_amount <= p_amount THEN
