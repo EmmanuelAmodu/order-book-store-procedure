@@ -22,8 +22,7 @@ BEGIN
     DECLARE done INT DEFAULT FALSE;
     DECLARE matched_amount DECIMAL(18,8);
     DECLARE executed_value DECIMAL(18,8);
-    
-    -- Cursor declaration
+
     DECLARE match_cursor CURSOR FOR
         SELECT id FROM orders
         WHERE pair_id = p_pair_id
